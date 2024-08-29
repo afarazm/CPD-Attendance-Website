@@ -44,10 +44,29 @@ def process_files():
     new_excel = pd.read_excel(directory_path)
     new_form = pd.read_excel(cpd_path)
 
+    # Ensure no leading/trailing spaces and consistent case
+    new_form['Email Address'] = new_form['Email Address'].str.strip().str.lower()
+    new_excel['Work Email'] = new_excel['Work Email'].str.strip().str.lower()
+
+    # Ensure data types are consistent
+    new_form['Email Address'] = new_form['Email Address'].astype(str)
+    new_excel['Work Email'] = new_excel['Work Email'].astype(str)
+
+    # Remove duplicates in the directory file
+    new_excel = new_excel.drop_duplicates(subset=['Work Email'])
+
+    # Debugging: Check if the data is being fetched correctly
+    # print(new_form[['Email Address']].head())
+    # print(new_excel[['Work Email']].head())
+
+    # Merge the data
     merged_excel = pd.merge(new_form, new_excel[['Work Email', 'Name', 'Title', 'Specialty', 'Mobile No.', 'QID', 'Medical License']], left_on='Email Address', right_on='Work Email', how='left')
     merged_excel.drop(columns=['Work Email', 'Item Type', 'Path', 'Submitted By'], inplace=True)
     columns = ['Name'] + [col for col in merged_excel if col != 'Name']
     merged_excel = merged_excel[columns]
+
+    # Debugging: Check if the merge result is correct
+    # print(merged_excel.head())
 
     final_file_path = os.path.join(app.config['OUTPUT_FOLDER'], 'CPD_Attendance_Data_for_MOPH.xlsx')
     merged_excel.to_excel(final_file_path, index=False)
